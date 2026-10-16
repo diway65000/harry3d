@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Quidditch 3D</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="icon" href="assets/icon-192.png">
+<style>
+html,body{margin:0;height:100%;background:#0a0a14;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;font-family:Georgia,serif;color:#fff}
+canvas#c{position:fixed;inset:0;width:100%;height:100%}
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:rgba(5,5,15,.78);z-index:5;gap:10px}
+.hide{display:none!important}
+h1{margin:0;color:#b04aff;font-size:clamp(24px,5vw,44px)} h2{margin:0}
+.row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.card{background:rgba(30,30,55,.9);border:3px solid #b04aff;border-radius:14px;padding:8px 14px;cursor:pointer;color:#fff;font:inherit}
+.card img{height:min(18vh,110px);display:block;margin:auto}.card b{display:block;font-size:20px}.card i{color:#ffd700;font-style:normal;font-size:14px}
+.dif{padding:8px 16px;border-radius:10px;border:2px solid #666;background:#32324a;color:#fff;font:inherit;cursor:pointer}.dif.on{background:#ffd700;color:#0a0a14}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:2;text-shadow:0 2px 4px #000}
+#hud div{position:absolute}
+#d{left:20px;top:12px;font-size:30px;color:#ffd700}#t{left:20px;top:52px;font-size:24px}#pn{left:20px;top:84px;font-size:16px;color:#ff7070}
+#lv{left:50%;top:10px;transform:translateX(-50%);font-size:34px;color:#ff5050}
+#ms{right:20px;top:14px;font-size:20px;color:#ccc;text-align:right}
+#big{left:0;right:0;top:35%;text-align:center;font-size:clamp(40px,12vw,120px);color:#ffd700}
+#bar{left:15%;right:15%;bottom:14px;height:10px;background:rgba(0,0,0,.5)}#bf{height:100%;width:0;background:#80ff78}
+#fl{position:fixed;inset:0;background:#f00;opacity:0;pointer-events:none;z-index:3}
+#ps{position:fixed;right:14px;top:70px;z-index:4;width:44px;height:44px;border-radius:10px;border:0;background:rgba(0,0,0,.5);color:#fff;font-size:18px}
+#pw,#joy{position:fixed;bottom:22px;z-index:4;touch-action:none}
+#pw{right:26px;width:96px;height:96px;border-radius:50%;border:4px solid #ffd700;background:rgba(255,215,0,.85);color:#0a0a14;font:bold 15px Georgia,serif;padding:0}
+#pw.cd{background:rgba(60,60,80,.8);color:#fff;font-size:30px}
+#joy{left:26px;width:110px;height:110px;border-radius:50%;border:3px solid rgba(255,215,0,.6);background:rgba(255,255,255,.08)}
+#knob{position:absolute;left:30px;top:30px;width:50px;height:50px;border-radius:50%;background:rgba(255,215,0,.8);pointer-events:none}
+@media (pointer:fine){#joy{display:none}}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="hud" class="hide">
+ <div id="d"></div><div id="t"></div><div id="pn"></div><div id="lv"></div><div id="ms"></div><div id="big"></div>
+ <div id="bar"><div id="bf"></div></div>
+</div>
+<div id="fl"></div>
+<button id="ps" class="hide">II</button>
+<button id="pw" class="hide"><span id="pwl"></span></button>
+<div id="joy" class="hide"><div id="knob"></div></div>
+<div id="menu" class="ov">
+ <h1>LA FORÊT INTERDITE · 3D</h1>
+ <div>Fuis les araignées, survis à l'araignée géante, franchis la ligne d'arrivée !</div>
+ <div id="rec" style="color:#ffd700"></div>
+ <div class="row" id="chs"></div>
+ <div class="row" id="dfs"></div>
+ <div style="color:#aaa;font-size:14px">Flèches / ZQSD : voler • Espace : pouvoir • P : pause</div>
+</div>
+<div id="res" class="ov hide"><h1 id="rt"></h1><h2 id="rd"></h2><div id="rr" style="color:#ffd700"></div>
+ <div class="row"><button class="dif on" id="again">Rejouer</button><button class="dif" id="tomenu">Menu</button></div></div>
+
+<script src="three.min.js"></script>
+<script src="game.js"></script>
+<script>
+if('serviceWorker' in navigator){
+ const had=!!navigator.serviceWorker.controller;let rl=false;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!rl){rl=true;location.reload()}});
+ addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}));
+}
+</script>
+</body></html>

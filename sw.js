@@ -1,4 +1,4 @@
-const C='quidditch3d-v1';
+const C='quidditch3d-v2';
 const F=['./','index.html','game.js','three.min.js','manifest.json',...['foret.jpg','harry.png','hermione.png','elise.png','musique_fond.mp3','attrape.mp3','collision.wav','icon-192.png','icon-512.png'].map(f=>'assets/'+f)];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>Promise.all(F.map(f=>c.add(f).catch(()=>{})))));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))));self.clients.claim()});

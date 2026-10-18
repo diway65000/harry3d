@@ -1,6 +1,6 @@
 'use strict';
 const $=id=>document.getElementById(id),rand=(a,b)=>a+Math.random()*(b-a),cl=(v,a,b)=>Math.max(a,Math.min(b,v));
-const CH=[{id:'harry',nom:'Harry',vit:8,cap:'Turbo'},{id:'hermione',nom:'Hermione',vit:7,cap:'Bouclier'},{id:'elise',nom:'Elise',vit:9,cap:'Petrificus'}];
+const CH=[{id:'harry',nom:'Harry',vit:8,cap:'Turbo'},{id:'hermione',nom:'Hermione',vit:7,cap:'Bouclier'},{id:'elise',nom:'Elise',vit:9,cap:'Petrificus',back:true}];
 const DIF=[{n:'Facile',sn:.8},{n:'Normal',sn:1},{n:'Difficile',sn:1.2}];
 const GOAL=600,BOSS_T=16,XM=8,YMIN=1,YMAX=7;
 let diff=1,state='menu',G=null,pz=0,bg=null;
@@ -30,14 +30,20 @@ const trunkM=new THREE.MeshLambertMaterial({color:0x2a1f2e}),leafM=new THREE.Mes
 const trees=[];
 function placeTree(t,z){const s=Math.random()<.5?-1:1;t.position.set(s*(10+Math.random()*30),0,z);t.scale.setScalar(.8+Math.random()*.9)}
 for(let i=0;i<80;i++){const t=new THREE.Group(),a=new THREE.Mesh(trunkG,trunkM);a.position.y=8;const b=new THREE.Mesh(leafG,leafM);b.position.y=17;b.scale.set(1,.7,1);t.add(a,b);scene.add(t);placeTree(t,-Math.random()*130);trees.push(t)}
-// lucioles
-const ffN=160,ffP=new Float32Array(ffN*3);for(let i=0;i<ffN;i++){ffP[i*3]=rand(-30,30);ffP[i*3+1]=rand(.5,14);ffP[i*3+2]=-rand(0,100)}
-const ffG=new THREE.BufferGeometry();ffG.setAttribute('position',new THREE.BufferAttribute(ffP,3));
-const ff=new THREE.Points(ffG,new THREE.PointsMaterial({color:0xe8e060,size:.35,fog:false}));ff.frustumCulled=false;scene.add(ff);
 
 /* ---------- Modèles ---------- */
 const sphG=new THREE.SphereGeometry(1,12,10),legG=new THREE.CylinderGeometry(1,1,1,5),UP=new THREE.Vector3(0,1,0);
 function seg(a,b,w,m){const d=b.clone().sub(a),me=new THREE.Mesh(legG,m);me.scale.set(w,d.length(),w);me.position.copy(a).add(b).multiplyScalar(.5);me.quaternion.setFromUnitVectors(UP,d.normalize());return me}
+
+// branches décor : haut (voûte) et bas (racines)
+const brM=new THREE.MeshLambertMaterial({color:0x3a2d3a}),decor=[];
+function branch(len,w,twigs=.7){const g=new THREE.Group();let a=new THREE.Vector3(-len/2,0,0);
+ for(let i=0;i<5;i++){const b=a.clone().add(new THREE.Vector3(len/5,rand(-.8,.8),rand(-1,1)));g.add(seg(a,b,w*(1-i*.12),brM));
+  if(Math.random()<twigs){const t=b.clone().add(new THREE.Vector3(rand(-1.5,1.5),rand(-3,-1),rand(-1.5,1.5)));g.add(seg(b,t,w*.4,brM))}a=b}return g}
+function placeDecor(d,z){d.position.z=z;if(d.userData.top){d.position.set(rand(-8,8),rand(11,15),z);d.rotation.y=rand(-.5,.5)}
+ else{d.position.set((Math.random()<.5?-1:1)*rand(7,16),.3,z);d.rotation.y=rand(0,6.28)}}
+for(let i=0;i<10;i++){const d=branch(rand(24,34),.5);d.userData.top=1;scene.add(d);placeDecor(d,-i*13);decor.push(d)}
+for(let i=0;i<16;i++){const d=branch(rand(6,10),.35,.4);scene.add(d);placeDecor(d,-i*8-rand(0,6));decor.push(d)}
 function spider(r,col=0x241f2e){
  const g=new THREE.Group(),m=new THREE.MeshLambertMaterial({color:col}),e=new THREE.MeshBasicMaterial({color:0xff2a2a});
  const body=new THREE.Mesh(sphG,m);body.scale.set(r*.9,r*.7,r*1.2);g.add(body);
@@ -71,7 +77,7 @@ function gate(){
 const texs={};for(const c of CH)texs[c.id]=TL.load('assets/'+c.id+'.png');
 const pm=new THREE.MeshBasicMaterial({transparent:true,alphaTest:.05,side:THREE.DoubleSide,fog:false});
 const pl=new THREE.Mesh(new THREE.PlaneGeometry(3.6,2.7),pm);scene.add(pl);
-const shieldM=new THREE.Mesh(new THREE.SphereGeometry(2.2,16,12),new THREE.MeshBasicMaterial({color:0x78c8ff,transparent:true,opacity:.25}));shieldM.visible=false;scene.add(shieldM);
+const shieldM=new THREE.Mesh(new THREE.SphereGeometry(1.9,16,12),new THREE.MeshBasicMaterial({color:0x78c8ff,transparent:true,opacity:.25}));shieldM.visible=false;scene.add(shieldM);
 const boss=spider(2.4,0x17121a);boss.rotation.y=Math.PI;boss.visible=false;scene.add(boss);
 const bossLight=new THREE.PointLight(0xff2020,0,30);scene.add(bossLight);
 let gateM=null;
@@ -135,10 +141,11 @@ $('again').onclick=()=>start(G.ch);$('tomenu').onclick=toMenu;
 function addObs(t,o){o.t=t;scene.add(o.m);G.obs.push(o)}
 function spawn(){
  const q=Math.random(),z=pz-85;
- if(q<.1&&G.lives<3){const m=new THREE.Mesh(heartG,heartM);m.scale.setScalar(.9);addObs('l',{m,x:rand(-6,6),y:rand(1.5,6.5),z,r:1.1})}
- else if(q<.28){addObs('w',{m:webMesh(2.4),x:rand(-6,6),y:rand(1.8,6),z,r:2.4})}
- else if(q<.6){const m=new THREE.Group(),s=spider(.9);m.add(s);const th=new THREE.Mesh(legG,threadM);th.scale.set(.03,1,.03);m.add(th);addObs('h',{m,s,th,x:rand(-6.5,6.5),y0:rand(2.5,5.5),y:4,z,r:1.2,ph:rand(0,6)})}
- else{const n=1+(Math.random()*3|0),x0=rand(-6,6),y0=rand(1.5,6);for(let i=0;i<n;i++)addObs('g',{m:spider(.8),x:cl(x0+rand(-2,2),-XM,XM),y:cl(y0+rand(-1,1),YMIN,YMAX),z:z-i*4,r:1.1,ph:rand(0,6)})}}
+ if(q<.08&&G.lives<3){const m=new THREE.Mesh(heartG,heartM);m.scale.setScalar(.9);addObs('l',{m,x:rand(-6,6),y:rand(1.5,6.5),z,r:1.1})}
+ else if(q<.3){addObs('w',{m:webMesh(2.4),x:rand(-6,6),y:rand(1.8,6),z,r:2.4})}
+ else if(q<.64){const m=new THREE.Group(),s=spider(.9);m.add(s);const th=new THREE.Mesh(legG,threadM);th.scale.set(.03,1,.03);m.add(th);
+  const br=branch(7,.4,.5);br.rotation.y=rand(-.6,.6);m.add(br);addObs('h',{m,s,th,br,x:rand(-6.5,6.5),y0:rand(2.5,5.5),y:12.5,drop:0,z,r:1.2,ph:rand(0,6)})}
+ else{const n=1+(Math.random()*2|0),x0=rand(-6,6),y0=rand(1.5,6);for(let i=0;i<n;i++)addObs('g',{m:spider(.8),x:cl(x0+rand(-2,2),-XM,XM),y:cl(y0+rand(-1,1),YMIN,YMAX),z:z-i*4,r:1.1,ph:rand(0,6)})}}
 function spit(){const B=G.bz,p=G.p,T=.9,v=G.v,tx=p.x,ty=p.y,tz=pz-v*T,sx=B.x,sy=B.y,sz=pz+B.d;
  const m=new THREE.Mesh(sphG,orbM);m.scale.setScalar(.6);addObs('v',{m,x:sx,y:sy,z:sz,vx:(tx-sx)/T,vy:(ty-sy)/T,vz:(tz-sz)/T,r:.6})}
 
@@ -155,10 +162,10 @@ function update(dt){
   G.bz={ph:'idle',t:0,x:p.x,y:4,d:40,nl:1.8,ns:1.2,sp:0};boss.visible=true}
  if(G.phase===1&&G.bw<2)G.bw+=dt;
  const warn=G.phase===1&&G.bw<2,fight=G.phase===1&&G.bw>=2;
- if(!warn&&!G.fin&&(G.spawn-=dt)<=0){G.spawn=Math.max(.4,1.15-G.el*.007)/G.d.sn*(fight?1.3:1);spawn()}
+ if(!warn&&!G.fin&&(G.spawn-=dt)<=0){G.spawn=1.3*Math.max(.4,1.15-G.el*.007)/G.d.sn*(fight?1.3:1);spawn()}
  // obstacles
  for(const o of G.obs){
-  if(o.t==='h'){o.y=o.y0+Math.sin(G.el*2.5+o.ph)*1.2;const L=14-o.y;o.th.scale.y=L;o.th.position.y=L/2;o.s.position.y=0;o.m.children[0].rotation.y=Math.sin(G.el+o.ph)*.4}
+  if(o.t==='h'){if(o.z-pz>-45)o.drop=1;if(o.drop)o.y+=cl(o.y0+Math.sin(G.el*2.5+o.ph)*.8-o.y,-10*dt,10*dt);const L=14-o.y;o.th.scale.y=L;o.th.position.y=L/2;o.br.position.y=L;o.m.children[0].rotation.y=Math.sin(G.el+o.ph)*.4}
   else if(o.t==='g'){if(o.z<pz-8){o.z+=4.5*dt;o.x+=cl(p.x-o.x,-3*dt,3*dt);o.y+=cl(p.y-o.y,-3*dt,3*dt)}else o.z+=4.5*dt;o.m.rotation.z=Math.sin(G.el*14+o.ph)*.08}
   else if(o.t==='v'){o.x+=o.vx*dt;o.y+=o.vy*dt;o.z+=o.vz*dt}
   else if(o.t==='l'){o.m.rotation.y+=dt*2.5}
@@ -188,18 +195,18 @@ function update(dt){
 }
 function render(t){
  const p=G.p,warn=G&&G.phase===1&&G.bw<2;
- pl.position.set(p.x,p.y,pz);pl.rotation.set(0,.7-p.ax*.35,-p.ax*.18+Math.sin(t*.008)*.03);
+ pl.position.set(p.x,p.y,pz);const bk=G.ch.back;pl.scale.set(bk?.75:1,1,1);pl.rotation.set(0,bk?-p.ax*.2:.7-p.ax*.35,-p.ax*(bk?.28:.18)+Math.sin(t*.008)*.03);
  pl.material.opacity=1;pl.visible=!(p.inv>0&&Math.sin(t*.06)>0);
  shieldM.visible=p.shield>0;shieldM.position.copy(pl.position);
  if(G.phase===1){const B=G.bz;boss.position.set(B.x,B.y,pz+B.d);boss.rotation.z=Math.sin(t*.004)*.04;boss.visible=true;
   bossLight.position.copy(boss.position);bossLight.intensity=B.ph==='tele'?2+Math.sin(t*.05)*1.5:.6;if(B.ph==='tele')boss.position.x+=Math.sin(t*.06)*.25}
- const sh=warn?.25:0,tx=p.x*.55+(sh?rand(-sh,sh):0),ty=p.y*.4+3.4+(sh?rand(-sh,sh):0);
- cam.position.set(tx,ty,pz+10.5);cam.lookAt(p.x*.4,p.y*.5+1,pz-14);
- cam.fov=68+(p.boost>0?10:0);cam.updateProjectionMatrix();
+ const sh=warn?.25:0,tx=p.x*.6+(sh?rand(-sh,sh):0),ty=p.y*.35+3+(sh?rand(-sh,sh):0);
+ cam.position.set(tx,ty,pz+7.5);cam.lookAt(p.x*.4,p.y*.4+1.6,pz-20);
+ cam.fov=70+(p.boost>0?10:0);cam.updateProjectionMatrix();
  backdrop.position.set(cam.position.x,30,cam.position.z-110);
  ground.position.set(0,0,Math.round((pz-80)/4)*4);
  for(const tr of trees)if(tr.position.z>pz+18)placeTree(tr,pz-125-Math.random()*10);
- const a=ffG.attributes.position.array;for(let i=0;i<ffN;i++){if(a[i*3+2]>pz+15)a[i*3+2]=pz-100;a[i*3+1]+=Math.sin(t*.002+i)*.003}ffG.attributes.position.needsUpdate=true;
+ for(const d of decor)if(d.position.z>pz+18)placeDecor(d,pz-125-Math.random()*10);
 }
 function hud(){
  const p=G.p,fight=G.phase===1&&G.bw>=2,warn=G.phase===1&&G.bw<2;
